@@ -9,12 +9,11 @@ Features:
 --
 - Show Leaderboards / Achievements
 - Report Scores to Leaderboards / Report Achievements
-- Achievement Caching System
+- Achievement / Score Caching System
 
 Future:
 --
 - Moutain Lion Compatibility
-- Score Reporting Caching?
 - Cocos2D 1.1 / AppKit compatibility
 
 License:
