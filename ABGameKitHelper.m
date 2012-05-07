@@ -31,8 +31,9 @@
         if (player.isAuthenticated) {
             isAuthenticated = YES;
             NSLog(@"GK - Player successfully authenticated");
-            //Report possible cached Achievements
+            //Report possible cached Achievements / Scores
             [self reportCachedAchievements];
+            [self reportCachedScores];
         }
         
         if (error != nil) {
@@ -64,10 +65,57 @@
     [scoreReporter reportScoreWithCompletionHandler:^(NSError *error) {
         if (error != nil){
             NSLog(@"GK - Error during reportScore: - Error: %@", error);
+            [self cacheScore:scoreReporter];
         } else {
             NSLog(@"GK - Score:%i Leaderboard:%@ reported", score, leaderboardName);
         }
     }];
+}
+
+-(void) cacheScore:(GKScore*)score {
+    //Retrieve Array of all Cached Scoress
+    NSData *loadedArrayData = [self loadDataForKey:@"cachedscores"];
+    NSMutableArray *scoresArray = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    
+    //Add new achievement to Array
+    [scoresArray addObject:score];
+    
+    //Save Array back to presitent storage
+    NSData *newArrayData = [NSKeyedArchiver archivedDataWithRootObject:scoresArray];
+    [self saveData:newArrayData withKey:@"cachedscores"];
+}
+
+-(void) reportCachedScores {
+    //Retrieve Array of all Cached Achievements
+    NSData *loadedArrayData = [self loadDataForKey:@"cachedscores"];
+    NSMutableArray *scoresArray = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    
+    //Array to keep track of successfully reported Achievements
+    NSMutableArray *deleteArray = [[NSMutableArray alloc] init];
+    
+    for (GKScore *score in scoresArray) {
+        
+        [score reportScoreWithCompletionHandler:^(NSError *error) {
+            if (error != nil) {
+                NSLog(@"GK - Error during reportCachesScores: - Error: %@", error);
+            } else {
+                NSLog(@"GK - Score:%@ Leaderboard:%@ reported", score.value, score.category);
+                //Add to deleteArray
+                [deleteArray addObject:score];
+            }
+        }];
+        
+    }
+    
+    //Delete successfully reported Achievement Objects from achievementArray 
+    [scoresArray removeObjectsInArray:deleteArray];
+    
+    //Save Array back to presitent storage
+    NSData *newArrayData = [NSKeyedArchiver archivedDataWithRootObject:scoresArray];
+    [self saveData:newArrayData withKey:@"cachedscores"];
+    
+    [deleteArray release];
+    deleteArray = nil;
 }
 
 -(void) reportAchievement:(NSString*)identifier percentComplete:(float)percent {
