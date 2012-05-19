@@ -7,9 +7,10 @@ Currently only compatible with Cocos2D 2.0 +
 
 Features:
 --
-- Show Leaderboards / Achievements
+- Show Leaderboards (specify which) / Achievements
 - Report Scores to Leaderboards / Report Achievements
 - Achievement / Score Caching System
+- All saved data is encrypted (AppStore Safe) … no cheating here ;)
 
 Future:
 --
