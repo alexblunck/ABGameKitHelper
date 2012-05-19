@@ -8,8 +8,10 @@
 
 #import "ABGameKitHelper.h"
 #import "AppDelegate.h"
+#import "NSData+AES256.h"
 
-#define APPNAME @"AppName"
+#define APPNAME @"MyAppName"
+#define AESKEY @"RandomKeyHere"
 
 @implementation ABGameKitHelper
 
@@ -42,9 +44,12 @@
     }];
 }
 
--(void) showLeaderboard {
+-(void) showLeaderboard:(NSString*)leaderboardID {
     GKLeaderboardViewController *leaderboardViewController = [[GKLeaderboardViewController alloc] init];
     leaderboardViewController.leaderboardDelegate = self;
+    if (leaderboardID) {
+        leaderboardViewController.category = leaderboardID;
+    }
     
     AppController *app = (AppController*) [[UIApplication sharedApplication] delegate];
     [[app navController] presentModalViewController:leaderboardViewController animated:YES];
@@ -73,9 +78,10 @@
 }
 
 -(void) cacheScore:(GKScore*)score {
-    //Retrieve Array of all Cached Scoress
+    //Retrieve Array of all Cached Achievements
     NSData *loadedArrayData = [self loadDataForKey:@"cachedscores"];
-    NSMutableArray *scoresArray = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    id achievements = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    NSMutableArray *scoresArray = [[NSMutableArray alloc] initWithArray:achievements];
     
     //Add new achievement to Array
     [scoresArray addObject:score];
@@ -83,44 +89,51 @@
     //Save Array back to presitent storage
     NSData *newArrayData = [NSKeyedArchiver archivedDataWithRootObject:scoresArray];
     [self saveData:newArrayData withKey:@"cachedscores"];
+    
+    NSLog(@"Cached Score: %lld for LB:%@", score.value, score.category);
 }
 
 -(void) reportCachedScores {
     //Retrieve Array of all Cached Achievements
     NSData *loadedArrayData = [self loadDataForKey:@"cachedscores"];
-    NSMutableArray *scoresArray = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    id achievements = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    NSMutableArray *scoresArray = [[NSMutableArray alloc] initWithArray:achievements];
     
-    //Array to keep track of successfully reported Achievements
-    NSMutableArray *deleteArray = [[NSMutableArray alloc] init];
+    NSLog(@"Number of cached scores: %i", scoresArray.count);
     
     for (GKScore *score in scoresArray) {
         
         [score reportScoreWithCompletionHandler:^(NSError *error) {
             if (error != nil) {
                 NSLog(@"GK - Error during reportCachesScores: - Error: %@", error);
+                [self cacheScore:score];
             } else {
-                NSLog(@"GK - Score:%@ Leaderboard:%@ reported", score.value, score.category);
-                //Add to deleteArray
-                [deleteArray addObject:score];
+                NSLog(@"GK - CachedScore:%lld Leaderboard:%@ reported", score.value, score.category);
             }
         }];
         
     }
     
-    //Delete successfully reported Achievement Objects from achievementArray 
-    [scoresArray removeObjectsInArray:deleteArray];
+    [self deleteScoresFromCache];
+    
+}
+
+-(void) deleteScoresFromCache  {
+    //Retrieve Array of all Cached Achievements
+    NSData *loadedArrayData = [self loadDataForKey:@"cachedscores"];
+    id scores = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    NSMutableArray *scoresArray = [[NSMutableArray alloc] initWithArray:scores];
+    
+    [scoresArray removeAllObjects];
     
     //Save Array back to presitent storage
     NSData *newArrayData = [NSKeyedArchiver archivedDataWithRootObject:scoresArray];
     [self saveData:newArrayData withKey:@"cachedscores"];
-    
-    [deleteArray release];
-    deleteArray = nil;
 }
 
 -(void) reportAchievement:(NSString*)identifier percentComplete:(float)percent {
     
-    GKAchievement *achievement = [[[GKAchievement alloc] initWithIdentifier:identifier ]  autorelease];
+    GKAchievement *achievement = [[GKAchievement alloc] initWithIdentifier:identifier];
     if (achievement) {
         achievement.percentComplete = percent;
         
@@ -144,54 +157,69 @@
 }
 
 -(void) cacheAchievement:(GKAchievement*)achievement {
+    NSLog(@"Cached Achievement: %@", achievement.identifier);
+    
+    NSString *identifier = achievement.identifier;
+    double percentage = achievement.percentComplete;
+    
     //Retrieve Array of all Cached Achievements
-    NSData *loadedArrayData = [self loadDataForKey:@"cachedachievements"];
-    NSMutableArray *achievementArray = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    NSData *loadedDicData = [self loadDataForKey:@"cachedachievements"];
+    id achievements = [NSKeyedUnarchiver unarchiveObjectWithData:loadedDicData];
+    NSMutableDictionary *achievementDic = [[NSMutableDictionary alloc] initWithDictionary:achievements];
     
     //Add new achievement to Array
-    [achievementArray addObject:achievement];
+    [achievementDic setObject:[NSNumber numberWithDouble:percentage] forKey:identifier];
     
     //Save Array back to presitent storage
-    NSData *newArrayData = [NSKeyedArchiver archivedDataWithRootObject:achievementArray];
-    [self saveData:newArrayData withKey:@"cachedachievements"];
+    NSData *newDicData = [NSKeyedArchiver archivedDataWithRootObject:achievementDic];
+    
+    [self saveData:newDicData withKey:@"cachedachievements"];
 }
 
 -(void) reportCachedAchievements {
     //Retrieve Array of all Cached Achievements
-    NSData *loadedArrayData = [self loadDataForKey:@"cachedachievements"];
-    NSMutableArray *achievementArray = [NSKeyedUnarchiver unarchiveObjectWithData:loadedArrayData];
+    NSData *loadedDicData = [self loadDataForKey:@"cachedachievements"];
+    id achievements = [NSKeyedUnarchiver unarchiveObjectWithData:loadedDicData];
+    NSMutableDictionary *achievementDic = [[NSMutableDictionary alloc] initWithDictionary:achievements];
     
-    //Array to keep track of successfully reported Achievements
-    NSMutableArray *deleteArray = [[NSMutableArray alloc] init];
+    NSLog(@"Number of cached Achievements: %i", achievementDic.count);
     
-    for (GKAchievement *achievement in achievementArray) {
-        if (achievement) {
-            [achievement reportAchievementWithCompletionHandler:^(NSError *error) {
-                if (error != nil) {
-                    NSLog(@"GK - Error during reportCachedAchievement: - Error: %@", error);
-                    
-                } else {
-                    NSLog(@"GK - CachedAchievement:%@ Percent:%f reported", achievement.identifier, achievement.percentComplete);
-                    //Locally report Achievement as completed
-                    if (achievement.percentComplete == 100) {
-                        [self saveBool:YES withKey:achievement.identifier];
-                    }
-                    //Add to deleteArray
-                    [deleteArray addObject:achievement];
+    [achievementDic enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        NSString *identifier = key;
+        double percentage = [obj doubleValue];
+        
+        GKAchievement *achievement = [[GKAchievement alloc] initWithIdentifier:identifier];
+        achievement.percentComplete = percentage;
+        [achievement reportAchievementWithCompletionHandler:^(NSError *error) {
+            if (error != nil) {
+                NSLog(@"GK - Error during reportCachedAchievement: - Error: %@", error);
+                
+            } else {
+                NSLog(@"GK - CachedAchievement:%@ Percent:%f reported", identifier, percentage);
+                //Locally report Achievement as completed
+                if (achievement.percentComplete == 100) {
+                    [self saveBool:YES withKey:identifier];
                 }
-            }];
-        }
-    }
+                //Add to deleteArray
+                [self deleteAchievementFromCache:identifier];
+            }
+            
+        }];
+    }];
+}
+
+-(void) deleteAchievementFromCache:(NSString*)identifier {
+    NSData *loadedDicData = [self loadDataForKey:@"cachedachievements"];
+    id achievements = [NSKeyedUnarchiver unarchiveObjectWithData:loadedDicData];
+    NSMutableDictionary *achievementDic = [[NSMutableDictionary alloc] initWithDictionary:achievements];
     
-    //Delete successfully reported Achievement Objects from achievementArray 
-    [achievementArray removeObjectsInArray:deleteArray];
+    [achievementDic removeObjectForKey:identifier];
+    
+    NSLog(@"post deletion count: %i", achievementDic.count);
     
     //Save Array back to presitent storage
-    NSData *newArrayData = [NSKeyedArchiver archivedDataWithRootObject:achievementArray];
-    [self saveData:newArrayData withKey:@"cachedachievements"];
-    
-    [deleteArray release];
-    deleteArray = nil;
+    NSData *newDicData = [NSKeyedArchiver archivedDataWithRootObject:achievementDic];
+    [self saveData:newDicData withKey:@"cachedachievements"];
 }
 
 -(void) resetAchievements {
@@ -224,33 +252,58 @@
 
 #pragma mark Data Persistence Methods
 
--(NSString*) getPath {
+-(NSString*) getBinaryPath {
+    
+    NSString *returnString;
+    
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *documentsDirectory = [paths objectAtIndex:0];
-    NSString *fileName = [NSString stringWithFormat:@"%@_ABGameKitHelper.plist", APPNAME];
-    NSString *path = [documentsDirectory stringByAppendingPathComponent:fileName]; 
-    return path;
+    NSString *fullFileName = [NSString stringWithFormat:@"%@_ABGameKitHelper.absave", APPNAME];
+    NSString *path = [documentsDirectory stringByAppendingPathComponent:fullFileName]; 
+    returnString = path;
+    
+    //Shouldn't happen:
+    return returnString;
 }
 
 -(void) saveData:(NSData *)data withKey:(NSString *)key {
     //Check if file exits, if so init Dictionary with it's content, otherwise allocate new one
-    BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:[self getPath]];
+    BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:[self getBinaryPath]];
     NSMutableDictionary *tempDic;
     if (fileExists == NO) {
         tempDic = [[NSMutableDictionary alloc] init];
     } else {
-        tempDic = [[NSMutableDictionary alloc] initWithContentsOfFile:[self getPath]];
+        NSData *binaryFile = [NSData dataWithContentsOfFile:[self getBinaryPath]];
+        NSData *dataKey = [[NSString stringWithString:AESKEY] dataUsingEncoding:NSUTF8StringEncoding];
+        NSData *decryptedData = [binaryFile decryptedWithKey:dataKey];
+        tempDic = [NSKeyedUnarchiver unarchiveObjectWithData:decryptedData];
     }
+    
     //Populate Dictionary with to save value/key and write to file
     [tempDic setObject:data forKey:key];
-    [tempDic writeToFile:[self getPath] atomically:YES];
+    //[tempDic writeToFile:[self getPath:fileName] atomically:YES];
+    
+    NSData *dicData = [NSKeyedArchiver archivedDataWithRootObject:tempDic];
+    
+    NSData *dataKey = [[NSString stringWithString:AESKEY] dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *encryptedData = [dicData encryptedWithKey:dataKey];
+    
+    [encryptedData writeToFile:[self getBinaryPath] atomically:YES];
+    
     //Release allocated Dictionary
-    [tempDic release];
+    //[tempDic release];
 }
 
 -(NSData*) loadDataForKey:(NSString*)key {
-    NSMutableDictionary *tempDic = [[NSMutableDictionary alloc] initWithContentsOfFile:[self getPath]];
+    NSData *binaryFile = [NSData dataWithContentsOfFile:[self getBinaryPath]];
+    NSData *dataKey = [[NSString stringWithString:AESKEY] dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *decryptedData = [binaryFile decryptedWithKey:dataKey];
+    
+    NSMutableDictionary *tempDic = [NSKeyedUnarchiver unarchiveObjectWithData:decryptedData];
     NSData *loadedData = [tempDic objectForKey:key];
+    
+    //[tempDic release];
+    
     return loadedData;
 }
 
@@ -271,8 +324,23 @@
     return [boolean boolValue];
 }
 
-
-
+-(void) saveINT:(int) number withKey:(NSString*) key{
+    NSNumber *numberObject = [NSNumber numberWithInt:number];
+    NSData *data = [NSKeyedArchiver archivedDataWithRootObject:numberObject];
+    [self saveData:data withKey:key];
+}
+-(int) loadINTForKey:(NSString*) key{
+    NSData *loadedData = [self loadDataForKey:key];
+    NSNumber *loadedNumberObject;
+    if (loadedData != NULL) {
+        loadedNumberObject = [NSKeyedUnarchiver unarchiveObjectWithData:loadedData];
+    } else {
+        loadedNumberObject = [NSNumber numberWithInt:0];
+    }
+    //Convert NSNumber object back to int
+    int loadedNumber = (int) [loadedNumberObject intValue];
+    return loadedNumber;
+}
 
 @end
 

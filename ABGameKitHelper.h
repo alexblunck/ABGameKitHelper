@@ -17,8 +17,8 @@
 + (id)sharedClass;
 
 -(void) authenticatePlayer;
--(void) showLeaderboard;
 -(void) showAchievements;
+-(void) showLeaderboard:(NSString*)leaderboardID;
 -(void) reportScore:(int)score forLeaderboard:(NSString*)leaderboardName;
 -(void) reportAchievement:(NSString*)identifier percentComplete:(float)percent;
 
