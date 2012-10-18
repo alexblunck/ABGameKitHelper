@@ -51,16 +51,16 @@
         leaderboardViewController.category = leaderboardID;
     }
     
-    AppController *app = (AppController*) [[UIApplication sharedApplication] delegate];
-    [[app navController] presentModalViewController:leaderboardViewController animated:YES];
+    UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
+    [[keyWindow rootViewController] presentModalViewController:leaderboardViewController animated:YES];
 }
 
 -(void) showAchievements {
     GKAchievementViewController *achievementsViewController = [[GKAchievementViewController alloc] init];
     achievementsViewController.achievementDelegate = self;
     
-    AppController *app = (AppController*) [[UIApplication sharedApplication] delegate];
-    [[app navController] presentModalViewController:achievementsViewController animated:YES];
+    UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
+    [[keyWindow rootViewController] presentModalViewController:leaderboardViewController animated:YES];
 }
 
 -(void) reportScore:(int)score forLeaderboard:(NSString*)leaderboardName {
@@ -343,13 +343,3 @@
 }
 
 @end
-
-
-
-
-
-
-
-
-
-

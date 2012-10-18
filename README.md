@@ -3,7 +3,7 @@ ABGameKitHelper
 
 Objective-C Helper class to ease interaction with Apple&#39;s GameKit API
 
-Currently only compatible with Cocos2D 2.0 +
+Should work with all types of Apps, also Cocos2d 1 & 2+
 
 Features:
 --
@@ -14,8 +14,7 @@ Features:
 
 Future:
 --
-- Moutain Lion Compatibility
-- Cocos2D 1.1 / AppKit compatibility
+- Mac / Moutain Lion Compatibility
 
 License:
 --
