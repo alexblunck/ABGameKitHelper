@@ -12,9 +12,53 @@ Features:
 - Achievement / Score Caching System
 - All saved data is encrypted (AppStore Safe) … no cheating here ;)
 
+____
+
+Tutorial:
+--
+Getting ABGameKitHelper up and running is fairly easy, here a step by step guide to get you started:
+
+1. Add "GameKit.framework" Library to your Project
+
+2. In your AppDelegate's ..application didFinishLaunchingWithOptions… Method add following code to automatially authenticate player with GameCenter: 
+
+	<code>[[ABGameKitHelper sharedClass] authenticatePlayer];</code>
+
+
+3. Thats the basic setup, easy huh? Now on to actually interacting with GameCenter:
+
+<strong>Show Leaderboard</strong>
+
+<code>[[ABGameKitHelper sharedClass] showLeaderboard:@"leaderboardID"];</code>
+
+<strong>Show Achievements</strong>
+
+<code>[[ABGameKitHelper sharedClass] showAchievements];</code>
+
+<strong>Report Achievement</strong>
+
+<code>[[ABGameKitHelper sharedClass] reportAchievement:@"achievementID" percentComplete:100];</code>
+
+<strong>Show Notification</strong> (Is only once per completed Achievement)
+
+<code>[[ABGameKitHelper sharedClass] showNotification:@"Notification Title" message:@"Some Message" identifier:@"achievementID"];</code>
+
+<strong>Report Leaderboard Score</strong>
+
+<code>
+[[ABGameKitHelper sharedClass] reportScore:2000 forLeaderboard:@"leaderboardID"];
+</code>
+
+<strong>!</strong>
+If no Internet connection is present during reporting Achievemnts/Leaderboard Scores are automatically cached and reported the next time the Player authenticates (The Code in the AppDelegate)
+
+____
+
 Future:
 --
 - Mac / Moutain Lion Compatibility
+
+____
 
 License:
 --
