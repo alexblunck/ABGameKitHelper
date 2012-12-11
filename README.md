@@ -20,7 +20,9 @@ Getting ABGameKitHelper up and running is fairly easy, here a step by step guide
 
 1. Add "GameKit.framework" Library to your Project
 
-2. In your AppDelegate's ..application didFinishLaunchingWithOptions… Method add following code to automatially authenticate player with GameCenter: 
+2. In ABGameKitHelper.m edit APPNAME and AESKEY to your liking
+
+3. In your AppDelegate's ..application didFinishLaunchingWithOptions… Method add following code to automatially authenticate player with GameCenter: 
 
 	<code>[[ABGameKitHelper sharedClass] authenticatePlayer];</code>
 
