@@ -60,7 +60,7 @@
     achievementsViewController.achievementDelegate = self;
     
     UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
-    [[keyWindow rootViewController] presentModalViewController:leaderboardViewController animated:YES];
+    [[keyWindow rootViewController] presentModalViewController:achievementsViewController animated:YES];
 }
 
 -(void) reportScore:(int)score forLeaderboard:(NSString*)leaderboardName {
