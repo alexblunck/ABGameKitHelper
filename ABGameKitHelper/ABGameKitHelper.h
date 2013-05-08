@@ -13,7 +13,7 @@
 #endif
 
 /**
- * Set SECRET_KEY for proper encryption
+ * Set SECRET_KEY for proper encryption DOGGIES!
  */
 #define SECRET_KEY @"MySecretKeyHere"
 
