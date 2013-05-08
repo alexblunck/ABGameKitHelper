@@ -17,12 +17,29 @@
  */
 #define SECRET_KEY @"MySecretKeyHere"
 
-@interface ABGameKitHelper : NSObject
+@protocol ABGameKitHelperDelegate
+
+- (void) matchStarted;
+- (void) matchEnded;
+- (void) match:(GKMatch*)match didReceiveData:(NSData *)data
+   fromPlayer:(NSString*)playerID;
+
+@end
+
+@interface ABGameKitHelper : NSObject <GKMatchmakerViewControllerDelegate, GKMatchDelegate> 
 
 /**
  * Always access class through this singleton
  * Call it once on application start to authenticate local player
  */
+
+@property (retain) UIViewController* presentingViewController;
+@property (retain) GKMatch* match;
+@property (assign) id <ABGameKitHelperDelegate> delegate;
+
+@property (nonatomic, assign, getter = isAuthenticated) BOOL authenticated;
+
+
 +(id) sharedHelper;
 
 
@@ -46,7 +63,12 @@
  */
 -(void) showNotification:(NSString*)title message:(NSString*)message identifier:(NSString*)achievementId;
 
+/**
+ * MatchMaking
+ */
 
-@property (nonatomic, assign, getter = isAuthenticated) BOOL authenticated;
+- (void)findMatchWithMinPlayers:(int)minPlayers maxPlayers:(int)maxPlayers
+				 viewController:(UIViewController *)viewController
+					   delegate:(id<ABGameKitHelperDelegate>)theDelegate;
 
 @end
