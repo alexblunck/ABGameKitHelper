@@ -9,6 +9,9 @@
 #import "ABGameKitHelper.h"
 
 @interface ABGameKitHelper () <GKLeaderboardViewControllerDelegate, GKAchievementViewControllerDelegate>
+
+@property (nonatomic) BOOL matchStarted;
+
 @end
 
 @implementation ABGameKitHelper
@@ -419,6 +422,128 @@
 -(void) achievementViewControllerDidFinish:(GKAchievementViewController *)viewController
 {
     [viewController dismissViewControllerAnimated:YES completion:nil];
+}
+
+#pragma mark - Matchmaking
+
+- (void) findMatchWithMinPlayers:(int)minPlayers maxPlayers:(int)maxPlayers
+				 viewController:(UIViewController *)viewController
+					   delegate:(id<ABGameKitHelperDelegate>)theDelegate
+{
+    if (![self isAuthenticated])
+	{
+		[self authenticatePlayer];
+	}
+	_matchStarted = NO;
+	self.match = nil;
+	self.presentingViewController = viewController;
+	_delegate = theDelegate;
+	[_presentingViewController dismissModalViewControllerAnimated:NO];
+	
+	GKMatchRequest* request = [[GKMatchRequest alloc] init];
+	request.minPlayers = minPlayers;
+	request.maxPlayers = maxPlayers;
+	
+	GKMatchmakerViewController *mmvc =
+	[[GKMatchmakerViewController alloc] initWithMatchRequest:request];
+	mmvc.matchmakerDelegate = self;
+	
+	[_presentingViewController presentModalViewController:mmvc animated:YES];
+}
+
+#pragma mark GKMatchDelegate
+
+// The match received data sent from the player.
+- (void)match:(GKMatch *)theMatch didReceiveData:(NSData *)data fromPlayer:(NSString *)playerID
+{
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    [_delegate match:theMatch didReceiveData:data fromPlayer:playerID];
+}
+
+// The player state changed (eg. connected or disconnected)
+- (void)match:(GKMatch *)theMatch player:(NSString *)playerID didChangeState:(GKPlayerConnectionState)state {
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    switch (state) {
+        case GKPlayerStateConnected:
+            NSLog(@"Player connected!");
+            
+            if (!_matchStarted && theMatch.expectedPlayerCount == 0)
+			{
+                NSLog(@"Ready to start match!");
+            }
+            
+            break;
+        case GKPlayerStateDisconnected:
+            // a player just disconnected.
+            NSLog(@"Player disconnected!");
+            _matchStarted = NO;
+            [_delegate matchEnded];
+            break;
+    }
+    
+}
+
+// The match was unable to connect with the player due to an error.
+- (void)match:(GKMatch *)theMatch connectionWithPlayerFailed:(NSString *)playerID withError:(NSError *)error {
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    NSLog(@"Failed to connect to player with error: %@", error.localizedDescription);
+    _matchStarted = NO;
+    [_delegate matchEnded];
+}
+
+// connection failed or GC is having issues on Apple's end...
+- (void)match:(GKMatch *)theMatch didFailWithError:(NSError *)error
+{
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    NSLog(@"Match failed with error: %@", error.localizedDescription);
+    _matchStarted = NO;
+    [_delegate matchEnded];
+}
+
+#pragma mark GKMatchmakerViewControllerDelegate
+
+// Matching canceled
+- (void)matchmakerViewControllerWasCancelled:(GKMatchmakerViewController *)viewController
+{
+    [_presentingViewController dismissModalViewControllerAnimated:YES];
+}
+
+// Matchmaking failed 
+- (void)matchmakerViewController:(GKMatchmakerViewController *)viewController didFailWithError:(NSError *)error
+{
+    [_presentingViewController dismissModalViewControllerAnimated:YES];
+    NSLog(@"Error finding match: %@", error.localizedDescription);
+}
+
+// match found
+- (void)matchmakerViewController:(GKMatchmakerViewController *)viewController didFindMatch:(GKMatch *)theMatch {
+    [_presentingViewController dismissModalViewControllerAnimated:YES];
+    self.match = theMatch;
+    _match.delegate = self;
+    if (!_matchStarted && _match.expectedPlayerCount == 0)
+	{
+        NSLog(@"Ready to start match!");
+    }
 }
 
 @end
