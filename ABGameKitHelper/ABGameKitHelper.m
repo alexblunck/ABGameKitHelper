@@ -9,6 +9,9 @@
 #import "ABGameKitHelper.h"
 
 @interface ABGameKitHelper () <GKLeaderboardViewControllerDelegate, GKAchievementViewControllerDelegate>
+
+@property (nonatomic) BOOL matchStarted;
+
 @end
 
 @implementation ABGameKitHelper
@@ -419,6 +422,33 @@
 -(void) achievementViewControllerDidFinish:(GKAchievementViewController *)viewController
 {
     [viewController dismissViewControllerAnimated:YES completion:nil];
+}
+
+#pragma mark - Matchmaking
+
+- (void) findMatchWithMinPlayers:(int)minPlayers maxPlayers:(int)maxPlayers
+				 viewController:(UIViewController *)viewController
+					   delegate:(id<ABGameKitHelperDelegate>)theDelegate
+{
+    if (![self isAuthenticated])
+	{
+		[self authenticatePlayer];
+	}
+	_matchStarted = NO;
+	self.match = nil;
+	self.presentingViewController = viewController;
+	_delegate = theDelegate;
+	[_presentingViewController dismissModalViewControllerAnimated:NO];
+	
+	GKMatchRequest* request = [[GKMatchRequest alloc] init];
+	request.minPlayers = minPlayers;
+	request.maxPlayers = maxPlayers;
+	
+	GKMatchmakerViewController *mmvc =
+	[[GKMatchmakerViewController alloc] initWithMatchRequest:request];
+	mmvc.matchmakerDelegate = self;
+	
+	[_presentingViewController presentModalViewController:mmvc animated:YES];
 }
 
 @end
