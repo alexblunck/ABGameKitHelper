@@ -451,4 +451,99 @@
 	[_presentingViewController presentModalViewController:mmvc animated:YES];
 }
 
+#pragma mark GKMatchDelegate
+
+// The match received data sent from the player.
+- (void)match:(GKMatch *)theMatch didReceiveData:(NSData *)data fromPlayer:(NSString *)playerID
+{
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    [_delegate match:theMatch didReceiveData:data fromPlayer:playerID];
+}
+
+// The player state changed (eg. connected or disconnected)
+- (void)match:(GKMatch *)theMatch player:(NSString *)playerID didChangeState:(GKPlayerConnectionState)state {
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    switch (state) {
+        case GKPlayerStateConnected:
+            NSLog(@"Player connected!");
+            
+            if (!_matchStarted && theMatch.expectedPlayerCount == 0)
+			{
+                NSLog(@"Ready to start match!");
+            }
+            
+            break;
+        case GKPlayerStateDisconnected:
+            // a player just disconnected.
+            NSLog(@"Player disconnected!");
+            _matchStarted = NO;
+            [_delegate matchEnded];
+            break;
+    }
+    
+}
+
+// The match was unable to connect with the player due to an error.
+- (void)match:(GKMatch *)theMatch connectionWithPlayerFailed:(NSString *)playerID withError:(NSError *)error {
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    NSLog(@"Failed to connect to player with error: %@", error.localizedDescription);
+    _matchStarted = NO;
+    [_delegate matchEnded];
+}
+
+// connection failed or GC is having issues on Apple's end...
+- (void)match:(GKMatch *)theMatch didFailWithError:(NSError *)error
+{
+    
+    if (_match != theMatch)
+	{
+		return;
+	}
+    
+    NSLog(@"Match failed with error: %@", error.localizedDescription);
+    _matchStarted = NO;
+    [_delegate matchEnded];
+}
+
+#pragma mark GKMatchmakerViewControllerDelegate
+
+// Matching canceled
+- (void)matchmakerViewControllerWasCancelled:(GKMatchmakerViewController *)viewController
+{
+    [_presentingViewController dismissModalViewControllerAnimated:YES];
+}
+
+// Matchmaking failed 
+- (void)matchmakerViewController:(GKMatchmakerViewController *)viewController didFailWithError:(NSError *)error
+{
+    [_presentingViewController dismissModalViewControllerAnimated:YES];
+    NSLog(@"Error finding match: %@", error.localizedDescription);
+}
+
+// match found
+- (void)matchmakerViewController:(GKMatchmakerViewController *)viewController didFindMatch:(GKMatch *)theMatch {
+    [_presentingViewController dismissModalViewControllerAnimated:YES];
+    self.match = theMatch;
+    _match.delegate = self;
+    if (!_matchStarted && _match.expectedPlayerCount == 0)
+	{
+        NSLog(@"Ready to start match!");
+    }
+}
+
 @end
