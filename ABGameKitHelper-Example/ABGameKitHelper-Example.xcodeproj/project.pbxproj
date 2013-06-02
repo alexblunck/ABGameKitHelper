@@ -270,6 +270,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "ABGameKitHelper-Example/ABGameKitHelper-Example-Prefix.pch";
 				INFOPLIST_FILE = "ABGameKitHelper-Example/ABGameKitHelper-Example-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -281,6 +282,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "ABGameKitHelper-Example/ABGameKitHelper-Example-Prefix.pch";
 				INFOPLIST_FILE = "ABGameKitHelper-Example/ABGameKitHelper-Example-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -305,6 +307,7 @@
 				D2CAC2C61736297300030D28 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
