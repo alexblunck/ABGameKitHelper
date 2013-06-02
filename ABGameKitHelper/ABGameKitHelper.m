@@ -223,17 +223,46 @@
     
     if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Attempting to report %i cached scores...", scores.count);
     
-    [GKScore reportScores:scores withCompletionHandler:^(NSError *error) {
-        if (!error)
+    //iOS 6.x+
+    if (IS_MIN_IOS6)
+    {
+        [GKScore reportScores:scores withCompletionHandler:^(NSError *error) {
+            if (!error)
+            {
+                [self removeAllCachedScores];
+                if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Reported %i cached score(s) successfully.", scores.count);
+            }
+            else
+            {
+                if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: ERROR -> Failed to report %i cached score(s).", scores.count);
+            }
+        }];
+    }
+    //iOS 5.1
+    else
+    {
+        for (GKScore *score in scores)
         {
-            [self removeAllCachedScores];
-            if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Reported %i cached score(s) successfully.", scores.count);
+            [score reportScoreWithCompletionHandler:^(NSError *error) {
+                if (!error)
+                {
+                    [self removeCachedScore:score];
+                    if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Reported cached score (%@ : %lli) successfully.", score.category, score.value);
+                }
+                else
+                {
+                    if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: ERROR -> Failed to report cached score (%@ : %lli).", score.category, score.value);
+                }
+            }];
         }
-        else
-        {
-            if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: ERROR -> Failed to report %i cached score(s).", scores.count);
-        }
-    }];
+    }
+}
+
+-(void) removeCachedScore:(GKScore*)score
+{
+    NSMutableArray *scores = [self objectForKey:@"cachedScores"];
+    [scores removeObject:score];
+    [self saveObject:scores key:@"cachedScores"];
 }
 
 -(void) removeAllCachedScores
@@ -262,17 +291,46 @@
     
     if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Attempting to report %i cached achievements...", achievements.count);
     
-    [GKAchievement reportAchievements:achievements withCompletionHandler:^(NSError *error) {
-        if (!error)
+    //iOS 6.x +
+    if (IS_MIN_IOS6)
+    {
+        [GKAchievement reportAchievements:achievements withCompletionHandler:^(NSError *error) {
+            if (!error)
+            {
+                [self removeAllCachedAchievements];
+                if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Reported %i cached achievement(s) successfully.", achievements.count);
+            }
+            else
+            {
+                if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: ERROR -> Failed to report %i cached achievement(s).", achievements.count);
+            }
+        }];
+    }
+    //iOS 5.1
+    else
+    {
+        for (GKAchievement *achievement in achievements)
         {
-            [self removeAllCachedAchievements];
-            if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Reported %i cached achievement(s) successfully.", achievements.count);
+            [achievement reportAchievementWithCompletionHandler:^(NSError *error) {
+                if (!error)
+                {
+                    [self removeCachedAchievement:achievement];
+                    if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Reported cached achievement (%@) successfully.", achievement.identifier);
+                }
+                else
+                {
+                    if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: ERROR -> Failed to report cached achievement (%@).", achievement.identifier);
+                }
+            }];
         }
-        else
-        {
-            if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: ERROR -> Failed to report %i cached achievement(s).", achievements.count);
-        }
-    }];
+    }
+}
+
+-(void) removeCachedAchievement:(GKAchievement*)achievement
+{
+    NSMutableArray *achievements = [self objectForKey:@"cachedAchievements"];
+    [achievements removeObject:achievement];
+    [self saveObject:achievements key:@"cachedAchievements"];
 }
 
 -(void) removeAllCachedAchievements
