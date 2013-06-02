@@ -25,6 +25,8 @@
 #import <CommonCrypto/CommonCryptor.h>
 #import "ABGameKitHelper.h"
 
+#define IS_MIN_IOS6 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 6.0f)
+
 @interface ABGameKitHelper () <GKLeaderboardViewControllerDelegate, GKAchievementViewControllerDelegate>
 @end
 
@@ -58,10 +60,11 @@
 -(void) authenticatePlayer
 {
     GKLocalPlayer *player = [GKLocalPlayer localPlayer];
-    [player setAuthenticateHandler:^(UIViewController *viewController, NSError *error) {
-        //
+    
+    void (^authBlock)(UIViewController *, NSError *) = ^(UIViewController *viewController, NSError *error) {
         
-        if (viewController) {
+        if (viewController)
+        {
             [[self topViewController] presentViewController:viewController animated:YES completion:nil];
         }
         
@@ -79,7 +82,22 @@
             self.authenticated = NO;
             if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: ERROR -> Player didn't authenticate");
         }
-    }];
+        
+    };
+    
+    //iOS 6.x +
+    if (IS_MIN_IOS6)
+    {
+        [player setAuthenticateHandler:authBlock];
+    }
+    //iOS 5.0
+    else
+    {
+        [player authenticateWithCompletionHandler:^(NSError *error)
+        {
+            authBlock(nil, error);
+        }];
+    }
 }
 
 
