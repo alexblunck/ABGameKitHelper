@@ -221,6 +221,10 @@
     //Retrieve cached scores
     NSMutableArray *scores = [self objectForKey:@"cachedScores"];
     
+    if (scores.count == 0) {
+        return;
+    }
+    
     if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Attempting to report %i cached scores...", scores.count);
     
     //iOS 6.x+
@@ -288,6 +292,10 @@
 {
     //Retrieve cached achievements
     NSMutableArray *achievements = [self objectForKey:@"cachedAchievements"];
+    
+    if (achievements.count == 0) {
+        return;
+    }
     
     if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Attempting to report %i cached achievements...", achievements.count);
     
