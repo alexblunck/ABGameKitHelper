@@ -3,7 +3,7 @@ ABGameKitHelper
 
 Objective-C Helper class to ease interaction with Apple&#39;s GameKit API
 
-Should work with all types of Apps, also Cocos2d 1 & 2+
+Should work with all types of Apps, also Cocos2d 2+
 
 Features:
 --
