@@ -25,6 +25,11 @@
 #import <CommonCrypto/CommonCryptor.h>
 #import "ABGameKitHelper.h"
 
+//Connection Test
+#import <sys/socket.h>
+#import <netinet/in.h>
+#import <SystemConfiguration/SystemConfiguration.h>
+
 #define IS_MIN_IOS6 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 6.0f)
 
 @interface ABGameKitHelper () <GKLeaderboardViewControllerDelegate, GKAchievementViewControllerDelegate>
@@ -73,8 +78,12 @@
             self.authenticated = YES;
             if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Player successfully authenticated.");
             //Report possible cached scores / achievements
-            [self reportCachedAchievements];
-            [self reportCachedScores];
+            if([self hasConnectivity])
+            {
+                //NSLog(@"internet online, report cache");
+                [self reportCachedAchievements];
+                [self reportCachedScores];
+            }
         }
         
         if (error)
@@ -94,9 +103,9 @@
     else
     {
         [player authenticateWithCompletionHandler:^(NSError *error)
-        {
-            authBlock(nil, error);
-        }];
+         {
+             authBlock(nil, error);
+         }];
     }
 }
 
@@ -111,6 +120,10 @@
     [score reportScoreWithCompletionHandler:^(NSError *error) {
         if (!error)
         {
+            if(![self hasConnectivity])
+            {
+                [self cacheScore:score];
+            }
             if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Reported score (%lli) to %@ successfully.", score.value, leaderboardId);
         }
         else
@@ -155,6 +168,10 @@
         [achievement reportAchievementWithCompletionHandler:^(NSError *error) {
             if (!error)
             {
+                if(![self hasConnectivity])
+                {
+                    [self cacheAchievement:achievement];
+                }
                 if (ABGAMEKITHELPER_LOGGING) NSLog(@"ABGameKitHelper: Achievement (%@) with %f%% progress reported", achievement.identifier, achievement.percentComplete);
             }
             else
@@ -207,7 +224,13 @@
 -(void) cacheScore:(GKScore*)aScore
 {
     //Retrieve cached scores
-    NSMutableArray *scores = [self objectForKey:@"cachedScores"];
+    NSMutableArray *scores;
+    if(![self objectForKey:@"cachedScores"])
+    {
+        scores = [NSMutableArray new];
+    }else{
+        scores = [self objectForKey:@"cachedScores"];
+    }
     
     //Add new score to array
     [scores addObject:aScore];
@@ -279,7 +302,13 @@
 -(void) cacheAchievement:(GKAchievement*)achievement
 {
     //Retrieve cached achievements
-    NSMutableArray *achievements = [self objectForKey:@"cachedAchievements"];
+    NSMutableArray *achievements;
+    if(![self objectForKey:@"cachedAchievements"])
+    {
+        achievements = [NSMutableArray new];
+    }else{
+        achievements = [self objectForKey:@"cachedAchievements"];
+    }
     
     //Add new achievment to array
     [achievements addObject:achievement];
@@ -442,8 +471,6 @@
     return NO;
 }
 
-
-
 #pragma mark - Helper
 -(NSString*) appName
 {
@@ -520,6 +547,66 @@
 -(void) achievementViewControllerDidFinish:(GKAchievementViewController *)viewController
 {
     [viewController dismissViewControllerAnimated:YES completion:nil];
+}
+
+
+#pragma mark - Connectivity Check
+/*
+ Connectivity testing code pulled from Apple's Reachability Example: http://developer.apple.com/library/ios/#samplecode/Reachability
+ Taken from - http://stackoverflow.com/questions/1083701/how-to-check-for-an-active-internet-connection-on-iphone-sdk
+ Leak fixed with CFRelease
+ YES - if connection available, NO - if not
+ */
+-(BOOL)hasConnectivity
+{
+    struct sockaddr_in zeroAddress;
+    bzero(&zeroAddress, sizeof(zeroAddress));
+    zeroAddress.sin_len = sizeof(zeroAddress);
+    zeroAddress.sin_family = AF_INET;
+    
+    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithAddress(kCFAllocatorDefault, (const struct sockaddr*)&zeroAddress);
+    
+    if(reachability != NULL)
+    {
+        //NetworkStatus retVal = NotReachable;
+        SCNetworkReachabilityFlags flags;
+        if (SCNetworkReachabilityGetFlags(reachability, &flags))
+        {
+            if ((flags & kSCNetworkReachabilityFlagsReachable) == 0)
+            {
+                // if target host is not reachable
+                CFRelease(reachability);
+                return NO;
+            }
+            
+            if ((flags & kSCNetworkReachabilityFlagsConnectionRequired) == 0)
+            {
+                // if target host is reachable and no connection is required then we'll assume (for now) that your on Wi-Fi
+                CFRelease(reachability);
+                return YES;
+            }
+            
+            if ((((flags & kSCNetworkReachabilityFlagsConnectionOnDemand ) != 0) || (flags & kSCNetworkReachabilityFlagsConnectionOnTraffic) != 0))
+            {
+                // ... and the connection is on-demand (or on-traffic) if the calling application is using the CFSocketStream or higher APIs
+                if ((flags & kSCNetworkReachabilityFlagsInterventionRequired) == 0)
+                {
+                    // ... and no [user] intervention is needed
+                    CFRelease(reachability);
+                    return YES;
+                }
+            }
+            
+            if ((flags & kSCNetworkReachabilityFlagsIsWWAN) == kSCNetworkReachabilityFlagsIsWWAN)
+            {
+                // ... but WWAN connections are OK if the calling application is using the CFNetwork (CFSocketStream?) APIs.
+                CFRelease(reachability);
+                return YES;
+            }
+        }
+    }
+    //CFRelease(reachability); //Null pointer argument in call to CFRelease
+    return NO;
 }
 
 @end
