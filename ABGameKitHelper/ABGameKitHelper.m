@@ -23,12 +23,10 @@
 //  THE SOFTWARE.
 
 #import <CommonCrypto/CommonCryptor.h>
-#import "ABGameKitHelper.h"
-
-//Connection Test
 #import <sys/socket.h>
 #import <netinet/in.h>
 #import <SystemConfiguration/SystemConfiguration.h>
+#import "ABGameKitHelper.h"
 
 #define IS_MIN_IOS6 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 6.0f)
 
@@ -80,7 +78,6 @@
             //Report possible cached scores / achievements
             if([self hasConnectivity])
             {
-                //NSLog(@"internet online, report cache");
                 [self reportCachedAchievements];
                 [self reportCachedScores];
             }
@@ -228,7 +225,9 @@
     if(![self objectForKey:@"cachedScores"])
     {
         scores = [NSMutableArray new];
-    }else{
+    }
+    else
+    {
         scores = [self objectForKey:@"cachedScores"];
     }
     
@@ -244,7 +243,8 @@
     //Retrieve cached scores
     NSMutableArray *scores = [self objectForKey:@"cachedScores"];
     
-    if (scores.count == 0) {
+    if (scores.count == 0)
+    {
         return;
     }
     
@@ -306,7 +306,9 @@
     if(![self objectForKey:@"cachedAchievements"])
     {
         achievements = [NSMutableArray new];
-    }else{
+    }
+    else
+    {
         achievements = [self objectForKey:@"cachedAchievements"];
     }
     
@@ -322,7 +324,8 @@
     //Retrieve cached achievements
     NSMutableArray *achievements = [self objectForKey:@"cachedAchievements"];
     
-    if (achievements.count == 0) {
+    if (achievements.count == 0)
+    {
         return;
     }
     
@@ -471,6 +474,8 @@
     return NO;
 }
 
+
+
 #pragma mark - Helper
 -(NSString*) appName
 {
@@ -550,14 +555,14 @@
 }
 
 
-#pragma mark - Connectivity Check
+
+#pragma mark - Connectivity Checking
 /*
  Connectivity testing code pulled from Apple's Reachability Example: http://developer.apple.com/library/ios/#samplecode/Reachability
  Taken from - http://stackoverflow.com/questions/1083701/how-to-check-for-an-active-internet-connection-on-iphone-sdk
  Leak fixed with CFRelease
- YES - if connection available, NO - if not
  */
--(BOOL)hasConnectivity
+-(BOOL) hasConnectivity
 {
     struct sockaddr_in zeroAddress;
     bzero(&zeroAddress, sizeof(zeroAddress));
