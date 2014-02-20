@@ -25,7 +25,7 @@ Tutorial:
 --
 Getting ABGameKitHelper up and running is fairly easy, here a step by step guide to get you started:
 
-1. Link "GameKit.framework" with your Project
+1. Link "GameKit.framework", "CFNetwork.framework", "Security.framework" and "SystemConfiguration.framework" with your Project
 
 2. In ABGameKitHelper.h edit SECRET_KEY  to your liking
 
